@@ -10,12 +10,22 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 load_dotenv()
+
+
+CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "True").lower() in ("true", "1", "yes")
+# If CORS_ALLOW_ALL_ORIGINS is not set, default to True
+if CORS_ALLOW_ALL_ORIGINS not in [True, False]:
+    raise ValueError("The CORS_ALLOW_ALL_ORIGINS variable must be set to True or False.")
+
+# CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if os.getenv("CORS_ALLOWED_ORIGINS") else []
 
 # Get the secret key from the environment variables
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -35,30 +45,25 @@ DATABASES = {
         'ENGINE': os.getenv("DB_ENGINE", "django.db.backends.sqlite3"),
         'NAME': os.getenv("DB_NAME", BASE_DIR / 'db.sqlite3'),
     }
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+}
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-sw_s#e4+m=&((v2xju2r(gkme4ox@$fg+%^*6^e2d3_+@92!xp'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'quotes',
-    'users',
-    'sessions',
     'reflections',
+    'focus_sessions',
     'rest_framework',
+    'users',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -68,6 +73,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -76,6 +82,17 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+} 
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}  
 
 ROOT_URLCONF = 'focusflow_backend.urls'
 
@@ -148,3 +165,5 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+AUTH_USER_MODEL = 'users.User'
+
